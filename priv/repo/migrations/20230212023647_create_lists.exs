@@ -1,0 +1,9 @@
+defmodule Todos.Repo.Migrations.CreateLists do
+  use Ecto.Migration
+
+  def change do
+    create table(:lists) do
+      add :name, :string, null: false
+    end
+  end
+end
