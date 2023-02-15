@@ -1,4 +1,4 @@
-.PHONY: all format build test run clean create migrate
+.PHONY: all format build test run clean create migrate psql
 
 all: format build test
 
@@ -23,3 +23,5 @@ create:
 migrate:
 	@mix ecto.migrate
 
+psql:
+	@docker exec -it todos-postgres psql -U todos
