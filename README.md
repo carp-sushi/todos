@@ -4,6 +4,15 @@
 
 ## PostgreSQL
 
-alias postgresql='docker run --rm --name todos-postgres -p 5432:5432 -e POSTGRES_PASSWORD=todos -e POSTGRES_USER=todos -d postgres'
-alias psql='docker exec -it todos-postgres psql -U todos'
+To start a PostgreSQL DB:
+
+```shell
+docker run --rm --name todos-postgres -p 5432:5432 -e POSTGRES_PASSWORD=todos -e POSTGRES_USER=todos -d postgres
+```
+
+To drop into a psql shell
+
+```shell
+docker exec -it todos-postgres psql -U todos
+```
 
