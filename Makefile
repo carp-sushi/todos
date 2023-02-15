@@ -1,6 +1,6 @@
 .PHONY: all format build test run clean create migrate psql
 
-all: format build test
+all: format build
 
 format:
 	@mix format

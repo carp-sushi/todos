@@ -83,7 +83,7 @@ defmodule Todos.Router do
         |> send_json(conn, @not_found)
 
       length(list.items) > 0 ->
-        %{:error => "cannot delete todo list with items: #{id}"}
+        %{:error => "todo list has items: #{id}"}
         |> encode_json()
         |> send_json(conn, @bad_request)
 
@@ -130,24 +130,24 @@ defmodule Todos.Router do
   end
 
   # Delete a todo list item
-  delete "/todos/:lid/items/:id" do
-    list = Repo.get(Todos.List, lid)
+  delete "/todos/:list_id/items/:item_id" do
+    list = Repo.get(Todos.List, list_id)
 
     if is_nil(list) do
-      %{:error => "todo list not found: #{lid}"}
+      %{:error => "todo list not found: #{list_id}"}
       |> encode_json()
       |> send_json(conn, @not_found)
     else
-      item = Repo.get(Todos.Item, id)
+      item = Repo.get(Todos.Item, item_id)
 
       cond do
         is_nil(item) ->
-          %{:error => "todo list item not found: #{id}"}
+          %{:error => "todo list item not found: #{item_id}"}
           |> encode_json()
           |> send_json(conn, @not_found)
 
         list.id != item.list_id ->
-          %{:error => "item not a member of todo list: #{lid}"}
+          %{:error => "item not a member of todo list: #{list_id}"}
           |> encode_json()
           |> send_json(conn, @bad_request)
 
