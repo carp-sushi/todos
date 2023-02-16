@@ -54,6 +54,30 @@ defmodule Todos.Router do
         _ -> {:body_error, "todo list name is required in request body"}
       end
 
+    handle_result(conn, result)
+  end
+
+  # Update a todo list name.
+  put "/todos/:id" do
+    list = Repo.get(Todos.List, id)
+
+    if is_nil(list) do
+      %{:error => "todo list not found: #{id}"}
+      |> encode_json()
+      |> send_json(conn, @not_found)
+    else
+      result =
+        case conn.body_params do
+          %{"name" => name} -> Todos.List.update(list.id, name)
+          _ -> {:body_error, "todo list name is required in request body"}
+        end
+
+      handle_result(conn, result)
+    end
+  end
+
+  # Handle the result of saving a todo list
+  def handle_result(conn, result) do
     case result do
       {:ok, todo} ->
         Todos.List.fields(todo)
