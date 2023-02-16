@@ -34,6 +34,6 @@ defmodule Todos.List do
   def update(id, name) do
     %List{id: id}
     |> changeset(%{:name => name})
-    |> Repo.insert()
+    |> Repo.update()
   end
 end
