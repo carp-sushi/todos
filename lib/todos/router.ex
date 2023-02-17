@@ -122,7 +122,7 @@ defmodule Todos.Router do
         |> send_json(conn, @bad_request)
 
       true ->
-        Repo.delete!(list)
+        Repo.delete(list)
         send_resp(conn, @no_content, "")
     end
   end
