@@ -7,20 +7,29 @@ defmodule Todos.Router do
   plug(Plug.Parsers, parsers: [:json], json_decoder: Poison)
   plug(:dispatch)
 
-  @not_found 404
-  @bad_request 400
   @ok 200
+  @no_content 204
+  @bad_request 400
+  @not_found 404
 
   # Encode data as JSON.
-  defp encode_json(data) do
-    Poison.encode!(data)
-  end
+  defp encode_json(data), do: Poison.encode(data)
 
   # Send a JSON response.
-  defp send_json(resp, conn, status \\ @ok) do
+  defp send_json(resp, conn, status \\ @ok), do: _send_json(resp, conn, status)
+
+  # Send a JSON success response.
+  defp _send_json({:ok, resp}, conn, status) do
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(status, resp)
+  end
+
+  # Send a JSON error response.
+  defp _send_json({:error, ex}, conn, _status) do
+    require Logger
+    Logger.error("error: #{ex}")
+    send_resp(conn, 500, "unexpected error")
   end
 
   # Send all todo lists as JSON.
@@ -35,26 +44,26 @@ defmodule Todos.Router do
   get "/todos/:id" do
     list = Repo.preload(Repo.get(Todos.List, id), [:items])
 
-    if is_nil(list) do
-      %{:error => "todo list not found: #{id}"}
-      |> encode_json()
-      |> send_json(conn, @not_found)
-    else
+    unless is_nil(list) do
       Todos.List.all_fields(list)
       |> encode_json()
       |> send_json(conn)
+    else
+      %{:error => "todo list not found: #{id}"}
+      |> encode_json()
+      |> send_json(conn, @not_found)
     end
   end
 
   # Create a new todo list
   post "/todos" do
-    result =
+    handle_list_save(
+      conn,
       case conn.body_params do
         %{"name" => name} -> Todos.List.create(name)
         _ -> {:body_error, "todo list name is required in request body"}
       end
-
-    handle_result(conn, result)
+    )
   end
 
   # Update a todo list name.
@@ -66,34 +75,35 @@ defmodule Todos.Router do
       |> encode_json()
       |> send_json(conn, @not_found)
     else
-      result =
+      handle_list_save(
+        conn,
         case conn.body_params do
           %{"name" => name} -> Todos.List.update(list.id, name)
           _ -> {:body_error, "todo list name is required in request body"}
         end
-
-      handle_result(conn, result)
+      )
     end
   end
 
-  # Handle the result of saving a todo list
-  def handle_result(conn, result) do
-    case result do
-      {:ok, todo} ->
-        Todos.List.fields(todo)
-        |> encode_json()
-        |> send_json(conn)
+  # Handle the successful result of creating or updating a todo list.
+  def handle_list_save(conn, {:ok, todo}) do
+    Todos.List.fields(todo)
+    |> encode_json()
+    |> send_json(conn)
+  end
 
-      {:body_error, errm} ->
-        %{:error => errm}
-        |> encode_json()
-        |> send_json(conn, @bad_request)
+  # Handle a JSON body error.
+  def handle_list_save(conn, {:body_error, errm}) do
+    %{:error => errm}
+    |> encode_json()
+    |> send_json(conn, @bad_request)
+  end
 
-      {:error, cs} ->
-        Todos.Error.extract(cs)
-        |> encode_json()
-        |> send_json(conn, @bad_request)
-    end
+  # Handle the failed result of a change set.
+  def handle_list_save(conn, {:error, cs}) do
+    Todos.Error.extract(cs)
+    |> encode_json()
+    |> send_json(conn, @bad_request)
   end
 
   # Delete an empty todo list.
@@ -113,9 +123,7 @@ defmodule Todos.Router do
 
       true ->
         Repo.delete!(list)
-        |> Todos.List.fields()
-        |> encode_json()
-        |> send_json(conn)
+        send_resp(conn, @no_content, "")
     end
   end
 
@@ -128,59 +136,88 @@ defmodule Todos.Router do
       |> encode_json()
       |> send_json(conn, @not_found)
     else
-      result =
+      handle_item_save(
+        conn,
         case conn.body_params do
           %{"name" => name} -> Todos.Item.create(list.id, name)
           _ -> {:body_error, "item name is required in request body"}
         end
-
-      case result do
-        {:ok, item} ->
-          Todos.Item.fields(item)
-          |> encode_json()
-          |> send_json(conn)
-
-        {:body_error, errm} ->
-          %{:error => errm}
-          |> encode_json()
-          |> send_json(conn, @bad_request)
-
-        {:error, cs} ->
-          Todos.Error.extract(cs)
-          |> encode_json()
-          |> send_json(conn, @bad_request)
-      end
+      )
     end
+  end
+
+  # Update a todo list item
+  put "/todos/:list_id/items/:item_id" do
+    list = Repo.get(Todos.List, list_id)
+    item = Repo.get(Todos.Item, item_id)
+
+    case validate_list_item(list, list_id, item, item_id) do
+      {:error, msg} ->
+        %{:error => msg} |> encode_json() |> send_json(conn, @not_found)
+
+      {:ok} ->
+        handle_item_save(
+          conn,
+          case conn.body_params do
+            %{"name" => name} -> Todos.Item.update(item.id, name)
+            _ -> {:body_error, "item name is required in request body"}
+          end
+        )
+    end
+  end
+
+  # Handle the successful result of creating or updating a todo list item.
+  def handle_item_save(conn, {:ok, item}) do
+    Todos.Item.fields(item)
+    |> encode_json()
+    |> send_json(conn)
+  end
+
+  # Handle a JSON body error.
+  def handle_item_save(conn, {:body_error, errm}) do
+    %{:error => errm}
+    |> encode_json()
+    |> send_json(conn, @bad_request)
+  end
+
+  # Handle the failed result of a change set.
+  def handle_item_save(conn, {:error, cs}) do
+    Todos.Error.extract(cs)
+    |> encode_json()
+    |> send_json(conn, @bad_request)
   end
 
   # Delete a todo list item
   delete "/todos/:list_id/items/:item_id" do
     list = Repo.get(Todos.List, list_id)
+    item = Repo.get(Todos.Item, item_id)
 
-    if is_nil(list) do
-      %{:error => "todo list not found: #{list_id}"}
-      |> encode_json()
-      |> send_json(conn, @not_found)
-    else
-      item = Repo.get(Todos.Item, item_id)
+    case validate_list_item(list, list_id, item, item_id) do
+      {:ok} ->
+        Repo.delete(item)
+        send_resp(conn, @no_content, "")
 
-      cond do
-        is_nil(item) ->
-          %{:error => "todo list item not found: #{item_id}"}
-          |> encode_json()
-          |> send_json(conn, @not_found)
+      {:error, msg} ->
+        %{:error => msg}
+        |> encode_json()
+        |> send_json(conn, @not_found)
+    end
+  end
 
-        list.id != item.list_id ->
-          %{:error => "item not a member of todo list: #{list_id}"}
-          |> encode_json()
-          |> send_json(conn, @bad_request)
+  # Validate that an item is a member of a todo list.
+  def validate_list_item(list, list_id, item, item_id) do
+    cond do
+      is_nil(list) ->
+        {:error, "todo list not found: #{list_id}"}
 
-        true ->
-          Repo.delete(item)
-          |> Todos.Item.fields()
-          |> encode_json()
-          |> send_json(conn)
-      end
+      is_nil(item) ->
+        {:error, "todo list item not found: #{item_id}"}
+
+      list.id != item.list_id ->
+        {:error, "item not a member of todo list"}
+
+      true ->
+        {:ok}
     end
   end
 

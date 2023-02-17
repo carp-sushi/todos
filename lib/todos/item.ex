@@ -25,4 +25,10 @@ defmodule Todos.Item do
     |> changeset(%{:name => name})
     |> Repo.insert()
   end
+
+  def update(id, name) do
+    %Item{id: id}
+    |> changeset(%{:name => name})
+    |> Repo.update()
+  end
 end
