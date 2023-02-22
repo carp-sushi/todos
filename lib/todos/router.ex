@@ -13,29 +13,20 @@ defmodule Todos.Router do
   @not_found 404
 
   # Encode data as JSON.
-  defp encode_json(data), do: Poison.encode(data)
+  defp encode_json(data),
+    do: Poison.encode!(data)
 
   # Send a JSON response.
-  defp send_json(resp, conn, status \\ @ok), do: _send_json(resp, conn, status)
-
-  # Send a JSON success response.
-  defp _send_json({:ok, resp}, conn, status) do
+  defp send_json(resp, conn, status \\ @ok) do
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(status, resp)
   end
 
-  # Send a JSON error response.
-  defp _send_json({:error, ex}, conn, _status) do
-    require Logger
-    Logger.error("error: #{ex}")
-    send_resp(conn, 500, "unexpected error")
-  end
-
   # Send all todo lists as JSON.
   get "/todos" do
     Repo.all(Todos.List)
-    |> Enum.map(&Todos.List.fields(&1))
+    |> Enum.map(&%{:id => &1.id, :name => &1.name})
     |> encode_json()
     |> send_json(conn)
   end
@@ -45,7 +36,7 @@ defmodule Todos.Router do
     list = Repo.preload(Repo.get(Todos.List, id), [:items])
 
     unless is_nil(list) do
-      Todos.List.all_fields(list)
+      list
       |> encode_json()
       |> send_json(conn)
     else
@@ -87,7 +78,7 @@ defmodule Todos.Router do
 
   # Handle the successful result of creating or updating a todo list.
   def handle_list_save(conn, {:ok, todo}) do
-    Todos.List.fields(todo)
+    todo
     |> encode_json()
     |> send_json(conn)
   end
@@ -168,7 +159,7 @@ defmodule Todos.Router do
 
   # Handle the successful result of creating or updating a todo list item.
   def handle_item_save(conn, {:ok, item}) do
-    Todos.Item.fields(item)
+    item
     |> encode_json()
     |> send_json(conn)
   end

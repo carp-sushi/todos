@@ -3,15 +3,11 @@ defmodule Todos.Item do
   alias Todos.{Repo, Item}
   import Ecto.Changeset
 
+  @derive {Poison.Encoder, only: [:id, :name]}
   schema "items" do
     field(:name, :string)
     belongs_to(:list, Todos.List)
   end
-
-  def fields({:ok, item}), do: fields(item)
-
-  def fields(item),
-    do: %{:id => item.id, :name => item.name}
 
   def changeset(struct, params) do
     struct
