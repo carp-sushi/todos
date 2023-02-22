@@ -26,7 +26,7 @@ defmodule Todos.Router do
   # Send all todo lists as JSON.
   get "/todos" do
     Repo.all(Todos.List)
-    |> Enum.map(&%{:id => &1.id, :name => &1.name})
+    |> Enum.map(fn l -> %{:id => l.id, :name => l.name} end)
     |> encode_json()
     |> send_json(conn)
   end
@@ -35,15 +35,13 @@ defmodule Todos.Router do
   get "/todos/:id" do
     list = Repo.preload(Repo.get(Todos.List, id), [:items])
 
-    unless is_nil(list) do
-      list
-      |> encode_json()
-      |> send_json(conn)
-    else
+    if is_nil(list) do
       %{:error => "todo list not found: #{id}"}
       |> encode_json()
       |> send_json(conn, @not_found)
     end
+
+    list |> encode_json() |> send_json(conn)
   end
 
   # Create a new todo list
@@ -65,15 +63,16 @@ defmodule Todos.Router do
       %{:error => "todo list not found: #{id}"}
       |> encode_json()
       |> send_json(conn, @not_found)
-    else
-      handle_list_save(
-        conn,
-        case conn.body_params do
-          %{"name" => name} -> Todos.List.update(list.id, name)
-          _ -> {:body_error, "todo list name is required in request body"}
-        end
-      )
+      |> halt
     end
+
+    handle_list_save(
+      conn,
+      case conn.body_params do
+        %{"name" => name} -> Todos.List.update(list.id, name)
+        _ -> {:body_error, "todo list name is required in request body"}
+      end
+    )
   end
 
   # Handle the successful result of creating or updating a todo list.
@@ -126,15 +125,16 @@ defmodule Todos.Router do
       %{:error => "todo list not found: #{id}"}
       |> encode_json()
       |> send_json(conn, @not_found)
-    else
-      handle_item_save(
-        conn,
-        case conn.body_params do
-          %{"name" => name} -> Todos.Item.create(list.id, name)
-          _ -> {:body_error, "item name is required in request body"}
-        end
-      )
+      |> halt
     end
+
+    handle_item_save(
+      conn,
+      case conn.body_params do
+        %{"name" => name} -> Todos.Item.create(list.id, name)
+        _ -> {:body_error, "item name is required in request body"}
+      end
+    )
   end
 
   # Update a todo list item
