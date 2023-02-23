@@ -5,6 +5,7 @@ defmodule Todos.Router do
   plug(Plug.Logger)
   plug(:match)
   plug(Plug.Parsers, parsers: [:json], json_decoder: Poison)
+  #plug(Todos.Preloader)
   plug(:dispatch)
 
   @ok 200
@@ -33,15 +34,11 @@ defmodule Todos.Router do
 
   # Send a todo list as JSON.
   get "/todos/:id" do
-    list = Repo.preload(Repo.get(Todos.List, id), [:items])
+    todos = Repo.preload(Repo.get(Todos.List, id), [:items])
 
-    if is_nil(list) do
-      %{:error => "todo list not found: #{id}"}
-      |> encode_json()
-      |> send_json(conn, @not_found)
-    end
-
-    list |> encode_json() |> send_json(conn)
+    todos
+    |> encode_json()
+    |> send_json(conn)
   end
 
   # Create a new todo list
