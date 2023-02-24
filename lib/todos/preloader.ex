@@ -5,17 +5,17 @@ defmodule Todos.Preloader do
 
   def init(opts), do: opts
 
-  def call(%Plug.Conn{path_info: ["todos", id | _], method: "GET"} = conn, _opts) do
-    todo = R.get(Todos.List, id)
+  def call(%Plug.Conn{path_info: ["todos", id | _]} = conn, _opts) do
+    list = R.get(Todos.List, id)
 
-    if is_nil(todo) do
+    if is_nil(list) do
       %{:error => "todo list not found: #{id}"}
       |> encode_json()
       |> send_404(conn)
+    else
+      Logger.info("Loaded todo list: #{id}")
+      conn |> assign(:list, list)
     end
-
-    Logger.info("Pre-loaded todo list: #{id}")
-    conn |> assign(:list, todo)
   end
 
   def call(conn, _opts) do

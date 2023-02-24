@@ -3,6 +3,8 @@ defmodule Todos.List do
   alias Todos.{Repo, List, Item}
   import Ecto.Changeset
 
+  @primary_key {:id, Ecto.UUID, autogenerate: true}
+
   @derive {Poison.Encoder, only: [:id, :name, :items]}
   schema "lists" do
     field(:name, :string)

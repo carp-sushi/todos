@@ -5,7 +5,7 @@ defmodule Todos.Router do
   plug(Plug.Logger)
   plug(:match)
   plug(Plug.Parsers, parsers: [:json], json_decoder: Poison)
-  #plug(Todos.Preloader)
+  plug(Todos.Preloader)
   plug(:dispatch)
 
   @ok 200
@@ -34,9 +34,7 @@ defmodule Todos.Router do
 
   # Send a todo list as JSON.
   get "/todos/:id" do
-    todos = Repo.preload(Repo.get(Todos.List, id), [:items])
-
-    todos
+    Repo.preload(conn.assigns[:list], [:items])
     |> encode_json()
     |> send_json(conn)
   end
@@ -54,14 +52,7 @@ defmodule Todos.Router do
 
   # Update a todo list name.
   put "/todos/:id" do
-    list = Repo.get(Todos.List, id)
-
-    if is_nil(list) do
-      %{:error => "todo list not found: #{id}"}
-      |> encode_json()
-      |> send_json(conn, @not_found)
-      |> halt
-    end
+    list = conn.assigns[:list]
 
     handle_list_save(
       conn,
@@ -74,7 +65,7 @@ defmodule Todos.Router do
 
   # Handle the successful result of creating or updating a todo list.
   def handle_list_save(conn, {:ok, todo}) do
-    todo
+    %{:id => todo.id, :name => todo.name}
     |> encode_json()
     |> send_json(conn)
   end
@@ -95,35 +86,21 @@ defmodule Todos.Router do
 
   # Delete an empty todo list.
   delete "/todos/:id" do
-    list = Repo.preload(Repo.get(Todos.List, id), [:items])
+    list = Repo.preload(conn.assigns[:list], [:items])
 
-    cond do
-      is_nil(list) ->
-        %{:error => "todo list not found: #{id}"}
-        |> encode_json()
-        |> send_json(conn, @not_found)
-
-      length(list.items) > 0 ->
-        %{:error => "todo list has items: #{id}"}
-        |> encode_json()
-        |> send_json(conn, @bad_request)
-
-      true ->
-        Repo.delete(list)
-        send_resp(conn, @no_content, "")
+    if length(list.items) > 0 do
+      %{:error => "todo list has items: #{id}"}
+      |> encode_json()
+      |> send_json(conn, @bad_request)
+    else
+      Repo.delete(list)
+      send_resp(conn, @no_content, "")
     end
   end
 
   # Add a new item to a todo list
   post "/todos/:id/items" do
-    list = Repo.get(Todos.List, id)
-
-    if is_nil(list) do
-      %{:error => "todo list not found: #{id}"}
-      |> encode_json()
-      |> send_json(conn, @not_found)
-      |> halt
-    end
+    list = conn.assigns[:list]
 
     handle_item_save(
       conn,
@@ -136,10 +113,10 @@ defmodule Todos.Router do
 
   # Update a todo list item
   put "/todos/:list_id/items/:item_id" do
-    list = Repo.get(Todos.List, list_id)
+    list = conn.assigns[:list]
     item = Repo.get(Todos.Item, item_id)
 
-    case validate_list_item(list, list_id, item, item_id) do
+    case validate_list_item(list, item, item_id) do
       {:error, msg} ->
         %{:error => msg} |> encode_json() |> send_json(conn, @not_found)
 
@@ -177,27 +154,22 @@ defmodule Todos.Router do
 
   # Delete a todo list item
   delete "/todos/:list_id/items/:item_id" do
-    list = Repo.get(Todos.List, list_id)
+    list = conn.assigns[:list]
     item = Repo.get(Todos.Item, item_id)
 
-    case validate_list_item(list, list_id, item, item_id) do
+    case validate_list_item(list, item, item_id) do
+      {:error, msg} ->
+        %{:error => msg} |> encode_json() |> send_json(conn, @not_found)
+
       {:ok} ->
         Repo.delete(item)
         send_resp(conn, @no_content, "")
-
-      {:error, msg} ->
-        %{:error => msg}
-        |> encode_json()
-        |> send_json(conn, @not_found)
     end
   end
 
   # Validate that an item is a member of a todo list.
-  def validate_list_item(list, list_id, item, item_id) do
+  def validate_list_item(list, item, item_id) do
     cond do
-      is_nil(list) ->
-        {:error, "todo list not found: #{list_id}"}
-
       is_nil(item) ->
         {:error, "todo list item not found: #{item_id}"}
 
