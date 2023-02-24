@@ -157,7 +157,7 @@ defmodule Todos.Router do
         {:error, "todo list item not found: #{item_id}"}
 
       list.id != item.list_id ->
-        {:error, "item not a member of todo list"}
+        {:error, "item not a member of todo list: #{list.id}"}
 
       true ->
         {:ok}
