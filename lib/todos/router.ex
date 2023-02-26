@@ -67,15 +67,15 @@ defmodule Todos.Router do
   end
 
   # Handle the successful result of creating or updating a todo list.
-  def handle_list_save(conn, {:ok, todo}),
+  defp handle_list_save(conn, {:ok, todo}),
     do: send_json(%{:id => todo.id, :name => todo.name}, conn)
 
   # Handle a JSON body error.
-  def handle_list_save(conn, {:body_error, errm}),
+  defp handle_list_save(conn, {:body_error, errm}),
     do: send_json_err(errm, conn, @bad_request)
 
   # Handle the failed result of a change set.
-  def handle_list_save(conn, {:error, cs}),
+  defp handle_list_save(conn, {:error, cs}),
     do: send_json(Todos.Error.extract(cs), conn, @bad_request)
 
   # Delete an empty todo list.
@@ -124,15 +124,15 @@ defmodule Todos.Router do
   end
 
   # Handle the successful result of creating or updating a todo list item.
-  def handle_item_save(conn, {:ok, item}),
+  defp handle_item_save(conn, {:ok, item}),
     do: send_json(item, conn)
 
   # Handle a JSON body error.
-  def handle_item_save(conn, {:body_error, errm}),
+  defp handle_item_save(conn, {:body_error, errm}),
     do: send_json_err(errm, conn, @bad_request)
 
   # Handle the failed result of a change set.
-  def handle_item_save(conn, {:error, cs}),
+  defp handle_item_save(conn, {:error, cs}),
     do: send_json(Todos.Error.extract(cs), conn, @bad_request)
 
   # Delete a todo list item
@@ -151,7 +151,7 @@ defmodule Todos.Router do
   end
 
   # Validate that an item is a member of a todo list.
-  def validate_list_item(list, item, item_id) do
+  defp validate_list_item(list, item, item_id) do
     cond do
       is_nil(item) ->
         {:error, "todo list item not found: #{item_id}"}
