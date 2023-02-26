@@ -17,10 +17,7 @@ defmodule Todos.Preloader do
     end
   end
 
-  def call(conn, _opts) do
-    # IO.inspect(conn, label: "conn")
-    conn
-  end
+  def call(conn, _opts), do: conn
 
   # Send a JSON response.
   defp send_404(data, conn) do

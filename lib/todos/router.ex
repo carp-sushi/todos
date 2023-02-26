@@ -34,7 +34,7 @@ defmodule Todos.Router do
 
   # Send a todo list as JSON.
   get "/todos/:id" do
-    list = conn.assigns[:list]
+    list = conn.assigns.list
 
     send_json(
       Repo.preload(list, [:items]),
@@ -55,7 +55,7 @@ defmodule Todos.Router do
 
   # Update a todo list name.
   put "/todos/:id" do
-    list = conn.assigns[:list]
+    list = conn.assigns.list
 
     handle_list_save(
       conn,
@@ -80,7 +80,7 @@ defmodule Todos.Router do
 
   # Delete an empty todo list.
   delete "/todos/:id" do
-    list = Repo.preload(conn.assigns[:list], [:items])
+    list = Repo.preload(conn.assigns.list, [:items])
 
     if length(list.items) > 0 do
       send_json_err("todo list has items: #{id}", conn, @bad_request)
@@ -92,7 +92,7 @@ defmodule Todos.Router do
 
   # Add a new item to a todo list
   post "/todos/:id/items" do
-    list = conn.assigns[:list]
+    list = conn.assigns.list
 
     handle_item_save(
       conn,
@@ -105,7 +105,7 @@ defmodule Todos.Router do
 
   # Update a todo list item
   put "/todos/:list_id/items/:item_id" do
-    list = conn.assigns[:list]
+    list = conn.assigns.list
     item = Repo.get(Todos.Item, item_id)
 
     case validate_list_item(list, item, item_id) do

@@ -3,7 +3,6 @@ defmodule Todos.Item do
 
   use Ecto.Schema
   import Ecto.Changeset
-  alias Todos.{Repo, Item}
 
   @derive {Poison.Encoder, only: [:id, :name]}
   @primary_key {:id, :string, autogenerate: {Ecto.Nanoid, :autogenerate, []}}
@@ -20,14 +19,14 @@ defmodule Todos.Item do
   end
 
   def create(id, name) do
-    %Item{list_id: id}
+    %Todos.Item{list_id: id}
     |> changeset(%{:name => name})
-    |> Repo.insert()
+    |> Todos.Repo.insert()
   end
 
   def update(id, name) do
-    %Item{id: id}
+    %Todos.Item{id: id}
     |> changeset(%{:name => name})
-    |> Repo.update()
+    |> Todos.Repo.update()
   end
 end

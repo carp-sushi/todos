@@ -3,13 +3,12 @@ defmodule Todos.List do
 
   use Ecto.Schema
   import Ecto.Changeset
-  alias Todos.{Repo, List, Item}
 
   @derive {Poison.Encoder, only: [:id, :name, :items]}
   @primary_key {:id, :string, autogenerate: {Ecto.Nanoid, :autogenerate, []}}
   schema "lists" do
     field(:name, :string)
-    has_many(:items, Item)
+    has_many(:items, Todos.Item)
   end
 
   def changeset(struct, params) do
@@ -20,14 +19,14 @@ defmodule Todos.List do
   end
 
   def create(name) do
-    %List{}
+    %Todos.List{}
     |> changeset(%{:name => name})
-    |> Repo.insert()
+    |> Todos.Repo.insert()
   end
 
   def update(id, name) do
-    %List{id: id}
+    %Todos.List{id: id}
     |> changeset(%{:name => name})
-    |> Repo.update()
+    |> Todos.Repo.update()
   end
 end
