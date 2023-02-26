@@ -1,14 +1,15 @@
 defmodule Todos.Item do
-  use Ecto.Schema
-  alias Todos.{Repo, Item}
-  import Ecto.Changeset
+  @moduledoc false
 
-  @primary_key {:id, Ecto.UUID, autogenerate: true}
+  use Ecto.Schema
+  import Ecto.Changeset
+  alias Todos.{Repo, Item}
 
   @derive {Poison.Encoder, only: [:id, :name]}
+  @primary_key {:id, :string, autogenerate: {Ecto.Nanoid, :autogenerate, []}}
   schema "items" do
     field(:name, :string)
-    belongs_to(:list, Todos.List, type: Ecto.UUID)
+    belongs_to(:list, Todos.List, type: Ecto.Nanoid)
   end
 
   def changeset(struct, params) do

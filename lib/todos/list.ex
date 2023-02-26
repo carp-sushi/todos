@@ -1,11 +1,12 @@
 defmodule Todos.List do
-  use Ecto.Schema
-  alias Todos.{Repo, List, Item}
-  import Ecto.Changeset
+  @moduledoc false
 
-  @primary_key {:id, Ecto.UUID, autogenerate: true}
+  use Ecto.Schema
+  import Ecto.Changeset
+  alias Todos.{Repo, List, Item}
 
   @derive {Poison.Encoder, only: [:id, :name, :items]}
+  @primary_key {:id, :string, autogenerate: {Ecto.Nanoid, :autogenerate, []}}
   schema "lists" do
     field(:name, :string)
     has_many(:items, Item)

@@ -25,7 +25,8 @@ defmodule Todos.MixProject do
       {:ecto_sql, "~> 3.2"},
       {:postgrex, "~> 0.15"},
       {:plug_cowboy, "~> 2.0"},
-      {:poison, "~> 5.0"}
+      {:poison, "~> 5.0"},
+      {:ecto_identifier, "~> 0.2.0"}
     ]
   end
 end

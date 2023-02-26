@@ -1,2 +1,2 @@
 alias Todos.Repo
-alias Todos.{List,Item}
+alias Todos.{List, Item}

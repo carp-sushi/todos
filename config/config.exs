@@ -7,3 +7,7 @@ config :todos, Todos.Repo,
   hostname: "localhost"
 
 config :todos, ecto_repos: [Todos.Repo]
+
+config :nanoid,
+  size: 12,
+  alphabet: "0123456789abcdefghijklmnopqrstuvwxyz"
