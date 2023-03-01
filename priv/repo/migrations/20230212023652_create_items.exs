@@ -3,8 +3,8 @@ defmodule Todos.Repo.Migrations.CreateItems do
 
   def change do
     create table(:items, primary_key: false) do
-      add :id, :string, primary_key: true
-      add :list_id, references(:lists, type: :string), null: false
+      add :id, :string, size: 12, primary_key: true
+      add :list_id, references(:lists, type: :string), size: 12, null: false
       add :name, :string, null: false
     end
   end

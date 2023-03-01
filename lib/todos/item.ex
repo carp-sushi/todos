@@ -20,13 +20,13 @@ defmodule Todos.Item do
 
   def create(id, name) do
     %Todos.Item{list_id: id}
-    |> changeset(%{:name => name})
+    |> changeset(%{name: name})
     |> Todos.Repo.insert()
   end
 
   def update(id, name) do
     %Todos.Item{id: id}
-    |> changeset(%{:name => name})
+    |> changeset(%{name: name})
     |> Todos.Repo.update()
   end
 end
